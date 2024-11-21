@@ -42,10 +42,43 @@ const client = new MongoClient(url, {
   },
 });
 
+
+// collection
+const userCollection = client.db('Mr_Fashion').collection('users');
+
 const dbConnect = async () => {
   try {
     await client.connect();
     console.log("Connected to MongoDB Atlas Successfully...!");
+
+
+    // Add user
+    app.post('/users', async (req, res) => {
+        const user = req.body;
+    
+        const query = { email: user.email };
+        const existingUser = await userCollection.findOne(query);
+
+        if (existingUser) {
+            return res.status(200).send({ 
+                message: 'User already exists', 
+                user: existingUser 
+            }); 
+        }
+
+    
+        const result = await userCollection.insertOne(user);
+        res.send(result);
+    });
+
+    // get all users
+    app.get('/users', async (req, res) => {
+        const result = await userCollection.find().toArray();
+        res.send(result);
+    })
+
+
+
   } catch (error) {
     console.error(error.name, error.message);
   }
