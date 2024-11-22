@@ -132,6 +132,15 @@ const dbConnect = async () => {
       res.send(result);
     });
 
+     // Get products by email
+     app.get("/products/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { sellerEmail: email };
+      const products = await productCollection.find(query).toArray();
+      res.send(products);
+    });
+    
+
 
 
   } catch (error) {
