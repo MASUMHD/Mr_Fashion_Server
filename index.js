@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb"); // Ensure ObjectId is imported
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb"); 
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const app = express();
@@ -91,7 +91,7 @@ const dbConnect = async () => {
       const query = {email: req.params.email};
       const user = await userCollection.findOne(query);
       res.send(user);
-  })
+    })
 
     // Update user role
     app.put("/users/:id", async (req, res) => {
@@ -140,6 +140,40 @@ const dbConnect = async () => {
       res.send(products);
     });
     
+    // Update product
+    app.put("/products/:id", async (req, res) => {
+      const productId = req.params.id;
+      const { title, description, price, stock, category, brand } = req.body;
+      
+      if (!title ||!description ||!price ||!stock || !category || !brand) {
+        return res.status(400).send({ message: "All fields are required" });
+      }
+      
+      const query = { _id: new ObjectId(productId) };
+      const update = {
+        $set: { title, description, price, stock, category, brand },
+      };
+      const result = await productCollection.updateOne(query, update);
+      
+      if (result.modifiedCount === 0) {
+        return res.status(404).send({ message: "Product not found" });
+      }
+      res.send(result);
+    });
+
+    // Delete product
+    app.delete("/products/:id", async (req, res) => {
+      const productId = req.params.id;
+      const query = { _id: new ObjectId(productId) };
+      const result = await productCollection.deleteOne(query);
+      
+      if (result.deletedCount === 0) {
+        return res.status(404).send({ message: "Product not found" });
+      }
+      res.send(result);
+    });
+
+    
 
 
 
@@ -155,7 +189,7 @@ app.get("/", (req, res) => {
   res.send("Mr. Fashion Server is running..!");
 });
 
-// JWT Authentication Endpoint
+// JWT Authentication 
 app.post("/authentication", async (req, res) => {
   const userEmail = req.body;
   try {
