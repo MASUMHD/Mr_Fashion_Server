@@ -173,8 +173,35 @@ const dbConnect = async () => {
       res.send(result);
     });
 
-    
 
+    // Get all products 
+    app.get('/products', async (req , res) => {
+      const { title, category, brand, sort } = req.query;
+      const query = {};
+  
+      if (title) {
+          query.title = { $regex: title, $options: 'i' };
+      }
+      if (category) {
+          query.category = { $regex: category, $options: 'i' };
+      }
+      if (brand) {
+          query.brand = brand;
+      }
+  
+      const sortOptions = sort === 'asc' ? 1 : -1;
+  
+      const products = await productCollection.find(query).sort({ price: sortOptions }).toArray();
+      
+      const productsInfo = await productCollection.find({}, { projection: { category: 1, brand: 1 } }).toArray();
+  
+      const categories = [...new Set(productsInfo.map((product) => product.category))];
+      const brands = [...new Set(productsInfo.map((product) => product.brand))];
+  
+      res.json({ products, brands, categories });
+    });
+    
+  
 
 
   } catch (error) {
