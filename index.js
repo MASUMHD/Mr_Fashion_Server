@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
-const jwt = require("jsonwebtoken"); // Import jsonwebtoken
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb"); // Ensure ObjectId is imported
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 4000;
@@ -42,45 +42,74 @@ const client = new MongoClient(url, {
   },
 });
 
-
-// collection
-const userCollection = client.db('Mr_Fashion').collection('users');
+// Collections
+const userCollection = client.db("Mr_Fashion").collection("users");
 
 const dbConnect = async () => {
   try {
     await client.connect();
     console.log("Connected to MongoDB Atlas Successfully...!");
 
-
     // Add user
-    app.post('/users', async (req, res) => {
-        const user = req.body;
-    
-        const query = { email: user.email };
-        const existingUser = await userCollection.findOne(query);
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
 
-        if (existingUser) {
-            return res.status(200).send({ 
-                message: 'User already exists', 
-                user: existingUser 
-            }); 
-        }
+      if (existingUser) {
+        return res.status(200).send({
+          message: "User already exists",
+          user: existingUser,
+        });
+      }
 
-    
-        const result = await userCollection.insertOne(user);
-        res.send(result);
+      const result = await userCollection.insertOne(user);
+      res.send(result);
     });
 
-    // get all users
-    app.get('/users', async (req, res) => {
-        const result = await userCollection.find().toArray();
-        res.send(result);
-    })
+    // Get all users
+    app.get("/users", async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    });
 
-    
+    // Get user by email
+    app.get('/user/:email', async (req, res) => {
+      const query = {email: req.params.email};
+      const user = await userCollection.findOne(query);
+      res.send(user);
+  })
 
+    // Update user role
+    app.put("/users/:id", async (req, res) => {
+      const userId = req.params.id;
+      const { role } = req.body;
 
+      if (!role) {
+        return res.status(400).send({ message: "Role is required" });
+      }
 
+      const query = { _id: new ObjectId(userId) };
+      const update = { $set: { role } };
+      const result = await userCollection.updateOne(query, update);
+
+      if (result.modifiedCount === 0) {
+        return res.status(404).send({ message: "User not found" });
+      }
+      res.send(result);
+    });
+
+    // Delete user
+    app.delete("/users/:id", async (req, res) => {
+      const userId = req.params.id;
+      const query = { _id: new ObjectId(userId) };
+      const result = await userCollection.deleteOne(query);
+
+      if (result.deletedCount === 0) {
+        return res.status(404).send({ message: "User not found" });
+      }
+      res.send(result);
+    });
   } catch (error) {
     console.error(error.name, error.message);
   }
@@ -95,7 +124,7 @@ app.get("/", (req, res) => {
 
 // JWT Authentication Endpoint
 app.post("/authentication", async (req, res) => {
-  const userEmail = req.body; // Ensure req.body contains { email: userEmail }
+  const userEmail = req.body;
   try {
     const token = jwt.sign(userEmail, process.env.ACCESS_JWT_TOKEN, {
       expiresIn: "10d",
