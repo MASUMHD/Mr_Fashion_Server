@@ -220,7 +220,7 @@ const dbConnect = async () => {
     });
 
 
-    // Get wishlist by email to show all wishlists products
+    // Get wishlist by email 
     app.get("/wishlists/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
@@ -228,6 +228,18 @@ const dbConnect = async () => {
       res.send(wishlists);
     });
     
+    // Delete wishlist
+    app.delete("/wishlists/:id", async (req, res) => {
+      const wishlistId = req.params.id; 
+      const query = { _id: new ObjectId(wishlistId) }; 
+      const result = await WishlistCollection.deleteOne(query);
+
+      if (result.deletedCount === 0) {
+        return res.status(404).send({ message: "Wishlist not found" });
+      }
+      res.send(result);
+    });
+
     
   
 
