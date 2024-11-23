@@ -57,6 +57,7 @@ const client = new MongoClient(url, {
 // Collections
 const userCollection = client.db("Mr_Fashion").collection("users");
 const productCollection = client.db('Mr_Fashion').collection('products');
+const WishlistCollection = client.db('Mr_Fashion').collection('wishlists');
 
 const dbConnect = async () => {
   try {
@@ -200,6 +201,33 @@ const dbConnect = async () => {
   
       res.json({ products, brands, categories });
     });
+
+    // Add wishlist
+    app.post("/wishlists", async (req, res) => {
+      const wishlist = req.body;
+      const query = { email: wishlist.email, productId: wishlist.productId }; 
+      const existingWishlist = await WishlistCollection.findOne(query);
+
+      if (existingWishlist) {
+        return res.status(200).send({
+        message: "Wishlist already exists",
+        wishlist: existingWishlist,
+        });
+      }
+
+      const result = await WishlistCollection.insertOne(wishlist);
+      res.send(result);
+    });
+
+
+    // Get wishlist by email to show all wishlists products
+    app.get("/wishlists/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const wishlists = await WishlistCollection.find(query).toArray();
+      res.send(wishlists);
+    });
+    
     
   
 
